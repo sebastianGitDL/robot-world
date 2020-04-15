@@ -5,61 +5,35 @@ First of all, thanks for taking the time to take this tech challenge. We really 
 
 It's the year 2020, the developers are part of the past. You are probably the last dev on the earth and you are pretty busy, so you decide the best is the robots can handle all the work instead of you.
 
-## Robot builder and initial data structure.
-This robot will be the one in charge to generate the data that will feed the whole process.
+## Basic structure
+- **Auditory**: Simple Class to handle communication with external applications (like Slacks), and I was also intending to use it to leave messages in the logs but due to lack of time I didn't do it.
+- **CarModel**: To handle logic associated to each Car's model, like the model's name, year, price and cost_price. I am assuming that the price and cost_price is associated to each model and not to the parts of each car.
+- **Car**: To handle logic associated to the each Car. I have configured [state_machine](https://github.com/pluginaweek/state_machine) to handle the the status transitions and several actions that are associated to some transitions (like adding stock to the factory_stock upon completion).
+- **CarPart**: Handles the logic realted to each car part (wheel, computer, chassis, etc). I am aware that this was not entirely necessary, but sinde it was simple enough I decided to do it this way. We could remove this model and handle the car parts as a new attribute within the car's model using an array atribute. I am pretty sure that doing that would probably improve performance at some point.
+- **Order**: To handle Order's logic. I have also configured [state_machine](https://github.com/pluginaweek/state_machine) as well to handle states and transitions between them. Since we are not handling billing, I am assuming that the Order is "purchases" at the moment of creation.
+- **StockLocation**: Used to handle the different possible warehouses we can have. It was not needed for this particular case, since based on the description the amount of locations is static, but having this Model would eventually allow us to scale or add more locations if needed (specially since there are several stores).
+- **StockItem**: This model is intended to save the stock amounts of each car model within each warehouse. 
 
- + Model a Car factory and the cars. The factory will have 3 assembly lines: “Basic structure”, “Electronic devices” and “Painting and final details”. When the car passes throughout the 3 lines we can consider it as complete.
- + The cars have simple parts: 4 wheels, 1 chassis, 1 laser, 1 computer, 1 engine, price, cost price and 2 seats. We should know the car year and the model name. The car computer should know if the car has any defect and where it is (which part). We should know the car model stock.
- + We have a warehouse when the cars are parked after completion. We should know how many cars by the model we have in the warehouse. We call this factory stock.
- + The cars should answer if it's a complete car or not and its current assembly stage.
- + Create a robot builder, once you create the data structure, you have to create a process (our robot builder) which will generate random cars each minute, it will be the one assigning the model names, the year, the parts, the assembly stage, the defects. 
-Each minute 10 new cars are created, every day the robot builder process start over from scratch wiping all the cars at the end of the day. Even though the generated cars are randomly generated, we have only 10 different car models. 
+## Robots
+The logic associated to the robots is being handled within different rake tasks that I have created within the `lib/tasks/robot_tasks.rb` file. Additionally, I have configured the [whenever](https://github.com/javan/whenever) to run each robot every X amount of time, accordingly to the each robot's description. This way I don't have to handle time managements within each robot.
 
+### How to run robots automatically
+In order to run all robots we can simply run `whenever --update-crontab` which would update the crontab.
 
-## Guard robot
--  This robot will be looking for any kind of defect, it will send an alert when the defect is detected and it will inform the details using slack.
-Here you go, a curl example (of course you’ll do this using Ruby rather than CURL)
+## #1 Problem
+Within the **Order** model I included a method to handle the checkout, where it basically handles the logic associated to the order's creation and validation. I think that one possible solution for this would be to perform some changes on the Order model to extend that the checkout logic and also the Guard Robot's tasks. Here is a list of actions I will perform: 
+- Configure Order model to support two possible status: `purchase` and `pending`. The former one would be associated to orders where there is enough stock for the car model. While the later would be used to mark those orders associated to car models where there is not enough stock in the store, but there is still stock in the factory.
+- Extend checkout process to also validate stock in both warehouses, and make sure to create the orders in `pending` status if there is not enough stock in the Store Warehouse but there is stock in the Factory Warehouse.
+- Extend the guard robot to also check for orders in `pending` status after moving the Stock. Then proceed to set as `purchased` each order where there is available stock.
 
-curl -X POST -H 'Content-type: application/json' --data '{"text":"Hello, World!"}' https://hooks.slack.com/services/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`
+## #2 Problem
+I would suggest supporting an API method to handle these updates. Here are some proposed changes:
+- add a new API controller like `app/controllers/api/v1/orders_controller.rb`
+- configure [devise](https://github.com/heartcombo/devise) to handle authorizations. I will try to configure it, but that would depend on times. 
+- Add new method within the **Order** model to handle validations and actions associated to this change (change the car model associated, update total, vlaidate stock, etc).
 
-You can check the details here:
-https://api.slack.com/docs/messages
-Note: The URL =>  https://hooks.slack.com/services/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 is a real URL, it will post the message you will format to the person who is reviewing the challenge.
+## PLUS
+TBD
 
-
-## About the stock
-The factory stock is different from the store stock. Every 30 minutes the guard robot beside of watching our defects will transfer the stock from factory stock to store stock in order to be sold (it will transfer only the non-defective cars stock). 
-
-
-##Robot buyer, order model and store stock
-
-Once the cars are ready to be sold, the cars are taken to another place, far from the factory and the factory warehouse. Here is where the Robot buyer comes on the scene, this process will buy a random number of cars always < 10 units each X amount of time (it can buy 10 cars/min top). When the robot buyer purchases a car an order will be placed. The robot only can buy 1 car at a time, so each order will have only 1 item. The stock will be decreased when the order is placed. Well, there’s a detail here, the stock we decreased is the store stock. If when the robot buyer wants to purchase a car model and there’s no stock, it won’t be able to buy it and that event will have to be logged.
-
-
-## The problem.
-You know the robot buyer knows the car models he is able to buy, we want to optimize the sales, as we have lag between the factory stock and the store stock, it may happen that we don’t have stock at the store stock but we actually have brand new cars ready to be sold in the factory stock. How can we optimize the stock management? (sadly we can’t centralize the stock)
-
-## The other problem.
-After you finish to code this challenge, imagine you'll receive a text message from the robot buyer, it says that several orders need to be changed because they want to change the cars models.
-First, you receive an order_id and the car model, but an hour later you'll start to receive several changes of this kind request per hour.
-What is your proposal to solve this need? Also please implement the solution.
-
-## A plus.
-Making the robot execs happy would be a good idea, it would be great to pull the daily revenue, how many cars we sell, average order value on a daily basis. 
-
-## Notes and considerations
-+ This is a pretty open challenge, there are several ways to solve it, the idea behind this you show us how you think, how you solve the problems. So express yourself, apply the good practices and techniques you learned but always with the right balance, keep it simple.
-+ Tests are important, we use Rspec, but mini test or another framework will do the job.
-+ Don't hesitate to ask, we are here to help.
-+ We use Rails and Postgres. The Postgres DB is mandatory for this challenge, but as this challenge doesn't have front-end, if you feel comfortable using plain ruby it's fine (if you decide to use a framework the only allowed is Rails). 
-
-
-
-
-
-
-
-
-
-
-
+## Automated Tests
+I have written some automated tests using rspec and also using the [Fabrication](www.fabricationgem.org) gem to handle factories.
