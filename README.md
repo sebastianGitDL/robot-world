@@ -17,8 +17,7 @@ It's the year 2020, the developers are part of the past. You are probably the la
 ## Robots
 The logic associated to the robots is being handled within different rake tasks that I have created within the `lib/tasks/robot_tasks.rb` file. Additionally, I have configured the [whenever](https://github.com/javan/whenever) to run each robot every X amount of time, accordingly to the each robot's description. This way I don't have to handle time managements within each robot.
 
-### How to run robots automatically
-In order to run all robots we can simply run `whenever --update-crontab` which would update the crontab.
+**Builder Robot**: On relation on how it creates the cars. I decided to simulate step by step the creation process proposed in the challenge and between each step add a check to validate if it should follow based on a random number. I also did the same when adding each car part to the car to decide if the part is defective or not.
 
 ## #1 Problem
 Within the **Order** model I included a method to handle the checkout, where it basically handles the logic associated to the order's creation and validation. I think that one possible solution for this would be to perform some changes on the Order model to extend that the checkout logic and also the Guard Robot's tasks. Here is a list of actions I will perform: 
