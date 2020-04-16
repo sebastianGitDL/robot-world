@@ -36,4 +36,4 @@ I would suggest supporting an API method to handle these updates. Here are some 
 TBD
 
 ## Automated Tests
-I have written some automated tests using rspec and also using the [Fabrication](www.fabricationgem.org) gem to handle factories.
+I have written some automated tests using rspec and also using the [Fabrication](www.fabricationgem.org) gem to handle factories. I have not configured Faker gem to generate example data for the test since I don't think it would be necessary for this particular challenge.

@@ -9,11 +9,7 @@ describe Order do
     before(:each) do
       Fabricate.create(:factory_stock)
       Fabricate.create(:store_stock)
-      car = Fabricate.create(:car)
-      car.set_as_electronic_devise
-      car.set_as_painting_and_final_details
-      car.set_as_complete
-      car.set_as_ready_to_be_sold
+      Fabricate.create(:car_ready_to_be_sold)
     end
 
     it 'creates order as purchased' do

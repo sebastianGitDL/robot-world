@@ -47,25 +47,25 @@ class Order < ActiveRecord::Base
 
     if new_car_model
       if new_car_model.available_stock?
-        new_car_model.add_stock('store_stock', -1)
-        car_model.add_stock('store_stock', 1)
+        new_car_model.add_stock('store_stock', -1, "Order Update: Removing from Order #{id}")
+        car_model.add_stock('store_stock', 1, "Order Update: Adding to Order #{id}")
         self.car_model_id = new_car_model.id
         self.total        = new_car_model.price
 
         if save
-          { code: 200, message: 'Order updated' }
+          { code: 200, message: I18n.t('messages.orders.update_success') }
         else
-          { code: 400, message: "Order not updated. Errors #{errors.messages.map { |k, v| "#{k}: #{v.join(',')}" }.join('. ')}" }
+          { code: 400, message: I18n.t('messages.orders.update_fail', error_messages: errors.messages.map { |k, v| "#{k}: #{v.join(',')}" }.join('. ')) }
         end
       else
-        { code: 400, message: 'Order not updated. There is no available stock in the store.' }
+        { code: 400, message: I18n.t('messages.orders.update_fail', error_messages: 'There is no available stock in the store.') }
       end
     else
-      { code: 404, message: 'There is no car model specified' }
+      { code: 404, message: I18n.t('messages.orders.update_fail', error_messages: 'Car model does not exists') }
     end
   rescue StandardError
     Rails.logger.error "[!] Order#change_car_model Unexpected error: #{$ERROR_INFO}"
-    { code: 500, message: 'Something went wrong. Please, try again in a few moments.' }
+    { code: 500, message: I18n.t('messages.unexpected_error') }
   end
 
   private
