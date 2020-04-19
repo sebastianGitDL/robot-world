@@ -50,6 +50,23 @@ describe Order do
 
         expect(order).to be_nil
       end
+
+      it 'does not create order if factory stock was all "taken"' do
+        car_model = CarModel.first
+        car_model.add_stock('store_stock', -1, 'testing')
+        car_model.add_stock('factory_stock', 1, 'testing')
+
+        expect(car_model.available_stock?).not_to be true
+        expect(car_model.available_stock?('factory_stock')).to be true
+
+        order = Order.checkout(car_model.id)
+        expect(order.status).to eq('pending')
+        expect(car_model.available_stock?('factory_stock')).to be true
+
+        order = Order.checkout(car_model.id)
+        expect(car_model.available_stock?('factory_stock')).to be true
+        expect(order).to be_nil
+      end
     end
   end
 end

@@ -42,7 +42,7 @@ namespace :robot do
         if car.defective_parts?
           Auditory.notify_slack("Car ID##{car.id} - Has defective parts.")
         else
-          car.set_as_ready_to_be_sold
+          car.set_as_ready_to_be_sold!
         end
       rescue StandardError
         Rails.logger.error "[!] Guard Robot Unexpected error while processing Car #{car.id}. Error: #{$ERROR_INFO}"

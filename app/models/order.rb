@@ -25,7 +25,7 @@ class Order < ActiveRecord::Base
   def self.checkout(car_model_id)
     car_model = CarModel.find_by(id: car_model_id)
 
-    if car_model.available_stock?('store_stock') || car_model.available_stock?('factory_stock')
+    if car_model.available_stock?('store_stock') || (car_model.available_stock('factory_stock') - Order.where_pending.where(car_model_id: car_model_id).count).positive?
       order = Order.new car_model_id: car_model.id,
                         total: car_model.price,
                         order_date: Time.current
